@@ -1,0 +1,52 @@
+# Use Railway's Postgres service (auto-provisioned)
+#
+# FRONTEND SERVICE:
+#   Root Directory: /
+#   Build Command: npm ci && npm run build
+#   Start Command: npm run start
+#   Port: 3000
+#
+# BACKEND SERVICE:
+#   Root Directory: /backend
+#   Build Command: npm ci && npx prisma generate && npm run build
+#   Start Command: npm run prisma:migrate:deploy && node dist/main.js
+#   Port: 3001
+#
+# POSTGRES:
+#   Provision via Railway Marketplace "Postgres"
+#   Set BACKEND DATABASE_URL from the Postgres service using Reference Variables
+
+# ---- Frontend variables ----
+NEXT_PUBLIC_APP_URL=https://${{RAILWAY_STATIC_URL}}
+# Use your Railway backend public URL here, e.g.:
+# NEXT_PUBLIC_API_URL=https://sewalink-backend-production.up.railway.app/api/v1
+NEXT_PUBLIC_API_URL=https://${{BACKEND_RAILWAY_STATIC_URL}}/api/v1
+
+# ---- Backend variables ----
+NODE_ENV=production
+PORT=3001
+
+# JWT - auto-generate strong values in Railway dashboard
+JWT_SECRET=change-me-to-32-char-random-string
+JWT_EXPIRES_IN=7d
+JWT_REFRESH_SECRET=change-me-to-another-32-char
+JWT_REFRESH_EXPIRES_IN=30d
+
+# Production CORS - your frontend domain
+CORS_ORIGIN=https://${{RAILWAY_STATIC_URL}}
+
+UPLOAD_DIR=./uploads
+MAX_FILE_SIZE=10485760
+
+# Payment gateways (live credentials)
+ESEWA_MERCHANT_ID=your-live-esewa-id
+ESEWA_SECRET_KEY=your-live-esewa-secret
+ESEWA_BASE_URL=https://esewa.com.np
+
+KHALTI_PUBLIC_KEY=your-live-khalti-public
+KHALTI_SECRET_KEY=your-live-khalti-secret
+KHALTI_BASE_URL=https://khalti.com/api/v2
+
+IMEPAY_MERCHANT_ID=your-live-imepay-id
+IMEPAY_SECRET_KEY=your-live-imepay-secret
+IMEPAY_BASE_URL=https://app.imepay.com.np/api/v1

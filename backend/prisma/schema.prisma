@@ -1,0 +1,502 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  WORKER
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_REVIEW
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EN_ROUTE
+  IN_PROGRESS
+  COMPLETED
+  DISPUTED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  INITIATED
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIAL_REFUND
+}
+
+enum PaymentMethod {
+  ESEWA
+  KHALTI
+  IMEPAY
+  CASH
+  BANK_TRANSFER
+}
+
+enum NotificationType {
+  BOOKING_CREATED
+  BOOKING_UPDATED
+  BOOKING_ACCEPTED
+  BOOKING_REJECTED
+  BOOKING_CANCELLED
+  BOOKING_COMPLETED
+  MESSAGE_NEW
+  VERIFICATION_STATUS
+  PAYMENT_RECEIVED
+  REVIEW_RECEIVED
+  SYSTEM
+}
+
+model User {
+  id              String          @id @default(cuid())
+  role            Role            @default(CUSTOMER)
+  email           String?         @unique
+  phone           String          @unique
+  passwordHash    String
+  fullName        String
+  avatarUrl       String?
+  isActive        Boolean         @default(true)
+  isEmailVerified Boolean         @default(false)
+  isPhoneVerified Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  customerProfile CustomerProfile?
+  workerProfile   WorkerProfile?
+  addresses       Address[]
+  bookingsAsCustomer Booking[] @relation("BookingsCustomer")
+  bookingsAsWorker Booking[] @relation("BookingsWorker")
+  reviewsWritten  Review[]        @relation("ReviewsAuthor")
+  reviewsReceived Review[]        @relation("ReviewsSubject")
+  notifications   Notification[]
+  sentMessages    ChatMessage[]   @relation("MessagesSender")
+  receivedMessages ChatMessage[]  @relation("MessagesReceiver")
+  chatParticipant ChatParticipant[]
+  favorites       FavoriteWorker[]
+  auditLogs       AuditLog[]
+  refreshTokens   RefreshToken[]
+  earnings        Earning[]
+  payouts         Payout[]
+  documents       Document[]
+
+  @@index([role])
+  @@index([phone])
+  @@index([email])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model CustomerProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  totalBookings    Int      @default(0)
+  totalSpent       Decimal  @default(0) @db.Decimal(12, 2)
+  referralCode     String?  @unique
+  referredById     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([referralCode])
+}
+
+model WorkerProfile {
+  id                 String              @id @default(cuid())
+  userId             String              @unique
+  categorySlug       String
+  bio                String?
+  yearsExperience    Int                 @default(0)
+  priceFrom          Decimal             @default(0) @db.Decimal(12, 2)
+  priceTo            Decimal?            @db.Decimal(12, 2)
+  location           String
+  latitude           Decimal?            @db.Decimal(9, 6)
+  longitude          Decimal?            @db.Decimal(9, 6)
+  verificationStatus VerificationStatus  @default(PENDING)
+  verificationNotes  String?
+  verifiedAt         DateTime?
+  rating             Decimal             @default(0) @db.Decimal(3, 2)
+  totalReviews       Int                 @default(0)
+  totalJobsDone      Int                 @default(0)
+  totalEarnings      Decimal             @default(0) @db.Decimal(12, 2)
+  responseTimeMinutes Int?
+  isOnline           Boolean             @default(false)
+  lastOnlineAt       DateTime?
+  gulfReturnee       Boolean             @default(false)
+  foreignCountryExp  String?
+  bankAccountNumber  String?
+  bankName           String?
+  bankAccountName    String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category           Category            @relation(fields: [categorySlug], references: [slug])
+  availability       Availability[]
+  badges             WorkerBadge[]
+  skills             WorkerSkill[]
+  favoritesOf        FavoriteWorker[]
+
+  @@index([categorySlug])
+  @@index([verificationStatus])
+  @@index([rating])
+  @@index([location])
+  @@index([isOnline])
+}
+
+model Category {
+  slug            String          @id
+  name            String
+  nameNe          String
+  blurb           String
+  avgPrice        String
+  iconName        String?
+  isActive        Boolean         @default(true)
+  sortOrder       Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  workers         WorkerProfile[]
+  skills          CategorySkill[]
+}
+
+model CategorySkill {
+  id           String   @id @default(cuid())
+  categorySlug String
+  name         String
+  nameNe       String?
+  category     Category @relation(fields: [categorySlug], references: [slug], onDelete: Cascade)
+
+  @@unique([categorySlug, name])
+  @@index([categorySlug])
+}
+
+model WorkerSkill {
+  id              String        @id @default(cuid())
+  workerProfileId String
+  skillName       String
+  proficiency     Int?
+  workerProfile   WorkerProfile @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([workerProfileId, skillName])
+  @@index([workerProfileId])
+}
+
+model Badge {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  description String?
+  iconName    String?
+  color       String?
+  createdAt   DateTime      @default(now())
+  workers     WorkerBadge[]
+}
+
+model WorkerBadge {
+  workerProfileId String
+  badgeId         String
+  awardedAt       DateTime      @default(now())
+  awardedBy       String?
+  workerProfile   WorkerProfile @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+  badge           Badge         @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@id([workerProfileId, badgeId])
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  fileName    String
+  filePath    String
+  fileSize    Int?
+  mimeType    String?
+  isVerified  Boolean  @default(false)
+  verifiedAt  DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+}
+
+model Address {
+  id           String   @id @default(cuid())
+  userId       String
+  label        String
+  fullAddress  String
+  city         String
+  district     String
+  ward         String?
+  latitude     Decimal? @db.Decimal(9, 6)
+  longitude    Decimal? @db.Decimal(9, 6)
+  isDefault    Boolean  @default(false)
+  phone        String?
+  instructions String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Availability {
+  id              String        @id @default(cuid())
+  workerProfileId String
+  dayOfWeek       Int
+  startTime       String
+  endTime         String
+  isAvailable     Boolean       @default(true)
+  workerProfile   WorkerProfile @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+
+  @@index([workerProfileId, dayOfWeek])
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  customerId      String
+  workerId        String
+  categorySlug    String
+  addressId       String?
+  status          BookingStatus @default(PENDING)
+  scheduledAt     DateTime
+  durationMinutes Int?
+  addressText     String
+  latitude        Decimal?      @db.Decimal(9, 6)
+  longitude       Decimal?      @db.Decimal(9, 6)
+  description     String?
+  notes           String?
+  basePrice       Decimal       @default(0) @db.Decimal(12, 2)
+  partsPrice      Decimal       @default(0) @db.Decimal(12, 2)
+  tipAmount       Decimal       @default(0) @db.Decimal(12, 2)
+  platformFee     Decimal       @default(0) @db.Decimal(12, 2)
+  totalAmount     Decimal       @default(0) @db.Decimal(12, 2)
+  workerEarnings  Decimal       @default(0) @db.Decimal(12, 2)
+  paidAt          DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  cancelledBy     String?
+  cancelReason    String?
+  arrivedAt       DateTime?
+  startedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  customer        User          @relation("BookingsCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  worker          User          @relation("BookingsWorker", fields: [workerId], references: [id], onDelete: Restrict)
+  address         Address?      @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  payments        Payment[]
+  reviews         Review[]
+  chat            ChatSession?
+  auditLogs       AuditLog[]
+
+  @@index([customerId])
+  @@index([workerId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([categorySlug])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  bookingId     String
+  amount        Decimal       @db.Decimal(12, 2)
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String?
+  gateway       String?
+  paidAt        DateTime?
+  failureReason String?
+  refundedAt    DateTime?
+  refundAmount  Decimal?      @db.Decimal(12, 2)
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([status])
+  @@index([method])
+  @@index([transactionId])
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  bookingId   String
+  authorId    String
+  subjectId   String
+  rating      Int
+  comment     String?
+  isWorker    Boolean
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  author      User     @relation("ReviewsAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  subject     User     @relation("ReviewsSubject", fields: [subjectId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId])
+  @@index([subjectId])
+  @@index([authorId])
+  @@index([rating])
+  @@unique([bookingId, authorId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+}
+
+model ChatSession {
+  id         String            @id @default(cuid())
+  bookingId  String?           @unique
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  booking    Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  messages   ChatMessage[]
+  participants ChatParticipant[]
+  lastMessageAt DateTime?
+
+  @@index([lastMessageAt])
+}
+
+model ChatParticipant {
+  id            String      @id @default(cuid())
+  chatSessionId String
+  userId        String
+  lastReadAt    DateTime?
+  isBlocked     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  chatSession   ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatSessionId, userId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id            String      @id @default(cuid())
+  chatSessionId String
+  senderId      String
+  receiverId    String
+  content       String
+  type          String      @default("text")
+  mediaUrl      String?
+  isRead        Boolean     @default(false)
+  readAt        DateTime?
+  createdAt     DateTime    @default(now())
+  chatSession   ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+  sender        User        @relation("MessagesSender", fields: [senderId], references: [id], onDelete: Restrict)
+  receiver      User        @relation("MessagesReceiver", fields: [receiverId], references: [id], onDelete: Restrict)
+
+  @@index([chatSessionId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model FavoriteWorker {
+  id              String        @id @default(cuid())
+  customerId      String
+  workerProfileId String
+  createdAt       DateTime      @default(now())
+  customer        User          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  workerProfile   WorkerProfile @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, workerProfileId])
+  @@index([customerId])
+}
+
+model Earning {
+  id              String        @id @default(cuid())
+  userId          String
+  bookingId       String?
+  amount          Decimal       @db.Decimal(12, 2)
+  type            String
+  description     String?
+  payoutStatus    String        @default("PENDING")
+  payoutId        String?
+  earnedAt        DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([payoutStatus])
+  @@index([earnedAt])
+}
+
+model Payout {
+  id            String   @id @default(cuid())
+  userId        String
+  amount        Decimal  @db.Decimal(12, 2)
+  status        String   @default("PENDING")
+  method        String
+  referenceId   String?
+  processedAt   DateTime?
+  bankName      String?
+  accountNumber String?
+  accountName   String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  earnings      Earning[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
