@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Sora, Inter, IBM_Plex_Mono, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import { StampFilterDefs } from "@/components/VerifiedStamp";
+import { AuthProvider } from "@/lib/auth-context";
 
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora", weight: ["500", "600", "700", "800"] });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -99,7 +100,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <StampFilterDefs />
-        <main id="main-content">{children}</main>
+        <AuthProvider>
+          <main id="main-content">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

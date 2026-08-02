@@ -316,7 +316,7 @@ model Booking {
   payments        Payment[]
   reviews         Review[]
   chat            ChatSession?
-  auditLogs       AuditLog[]
+  auditLogs       AuditLog[]     @relation("AuditLogsBooking")
 
   @@index([customerId])
   @@index([workerId])
@@ -498,10 +498,11 @@ model AuditLog {
   userAgent  String?
   createdAt  DateTime @default(now())
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  booking    Booking? @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  booking    Booking? @relation("AuditLogsBooking", fields: [entityId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([action])
+  @@index([entityType])
   @@index([entityType, entityId])
   @@index([createdAt])
 }

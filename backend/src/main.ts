@@ -76,6 +76,9 @@ async function bootstrap() {
     },
   });
 
+  // Graceful shutdown
+  app.enableShutdownHooks();
+
   const port = process.env.PORT || 3001;
   await app.listen(port);
   logger.log(`SewaLink API running on http://localhost:${port}`);

@@ -1,5 +1,5 @@
 import WorkerCard from "@/components/WorkerCard";
-import type { Worker } from "@/lib/data";
+import type { Worker } from "@/lib/server-data";
 
 export default function FeaturedPros({ featured }: { featured: Worker[] }) {
   return (
@@ -8,11 +8,18 @@ export default function FeaturedPros({ featured }: { featured: Worker[] }) {
       <h2 id="pros-heading" className="mt-2 font-display text-2xl font-bold text-ink-900 sm:text-3xl">
         Top-rated pros this week
       </h2>
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {featured.map((w) => (
-          <WorkerCard key={w.id} worker={w} />
-        ))}
-      </div>
+      {featured.length === 0 ? (
+        <div className="mt-8 rounded-xl2 border border-dashed border-ink-900/15 p-12 text-center">
+          <p className="font-display text-sm font-semibold text-ink-900">No featured professionals available</p>
+          <p className="mt-1 text-xs text-ink-400">Check back later for top-rated pros.</p>
+        </div>
+      ) : (
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {featured.map((w) => (
+            <WorkerCard key={w.id} worker={w} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

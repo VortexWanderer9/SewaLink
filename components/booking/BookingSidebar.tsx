@@ -1,4 +1,4 @@
-import type { Worker } from "@/lib/data";
+import type { Worker } from "@/lib/server-data";
 
 export default function BookingSidebar({ worker }: { worker: Worker }) {
   return (

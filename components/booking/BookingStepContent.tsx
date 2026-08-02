@@ -1,5 +1,5 @@
 import { MapPin, Calendar, Wallet, Check } from "lucide-react";
-import type { Worker } from "@/lib/data";
+import type { Worker } from "@/lib/server-data";
 
 export const SLOTS = ["Today, 4:00 PM", "Today, 6:00 PM", "Tomorrow, 9:00 AM", "Tomorrow, 2:00 PM"];
 export const PAYMENT_METHODS = [

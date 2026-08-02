@@ -14,6 +14,8 @@ import DownloadApp from "@/components/home/DownloadApp";
 import InvestorSection from "@/components/home/InvestorSection";
 import { getFeaturedWorkers, getCategories } from "@/lib/server-data";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "SewaLink Nepal — Trusted Local Services, One Tap Away",
   description:

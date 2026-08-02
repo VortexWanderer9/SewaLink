@@ -24,7 +24,8 @@ WORKDIR /app/backend
 COPY --from=backend-prod-deps /app/backend/node_modules ./node_modules
 COPY --from=backend-builder /app/backend/dist ./dist
 COPY --from=backend-builder /app/backend/prisma ./prisma
-COPY backend/package.json ./
+COPY --from=backend-builder /app/backend/package.json ./
+COPY --from=backend-builder /app/backend/package-lock.json ./
 RUN mkdir -p uploads
 EXPOSE 3001
 CMD ["node", "dist/main.js"]

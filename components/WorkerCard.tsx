@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MapPin, ShieldCheck } from "lucide-react";
 import RatingStars from "./RatingStars";
-import type { Worker } from "@/lib/data";
+import type { Worker } from "@/lib/server-data";
 
 export default function WorkerCard({ worker }: { worker: Worker }) {
   return (

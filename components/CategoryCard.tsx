@@ -14,7 +14,7 @@ import {
   Bug,
   type LucideIcon,
 } from "lucide-react";
-import type { Category } from "@/lib/data";
+import type { Category } from "@/lib/server-data";
 
 export const categoryIcons: Record<string, LucideIcon> = {
   electrician: Zap,

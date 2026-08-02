@@ -11,7 +11,7 @@ import BookingStepContent, {
   type BookingState,
 } from "@/components/booking/BookingStepContent";
 import BookingSidebar from "@/components/booking/BookingSidebar";
-import type { Worker } from "@/lib/data";
+import type { Worker } from "@/lib/server-data";
 
 export default function BookingFlow({ worker, workerId }: { worker: Worker; workerId: string }) {
   const router = useRouter();

@@ -40,10 +40,25 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Phone or email already registered' })
   async registerCustomer(
     @Body() dto: RegisterCustomerDto,
+    @Res({ passthrough: true }) res: Response,
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    return this.authService.registerCustomer(dto, ip, userAgent);
+    const result = await this.authService.registerCustomer(dto, ip, userAgent);
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN;
+    
+    const refreshToken = await this.authService.generateRefreshTokenForCookie(result.user.id);
+    
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      maxAge: 30 * 24 * 3600 * 1000,
+      path: '/',
+      domain: cookieDomain || undefined,
+    });
+    return result;
   }
 
   @Public()
@@ -52,10 +67,25 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Worker registered, pending verification' })
   async registerWorker(
     @Body() dto: RegisterWorkerDto,
+    @Res({ passthrough: true }) res: Response,
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    return this.authService.registerWorker(dto, ip, userAgent);
+    const result = await this.authService.registerWorker(dto, ip, userAgent);
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN;
+    
+    const refreshToken = await this.authService.generateRefreshTokenForCookie(result.user.id);
+    
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      maxAge: 30 * 24 * 3600 * 1000,
+      path: '/',
+      domain: cookieDomain || undefined,
+    });
+    return result;
   }
 
   @Public()
@@ -71,12 +101,19 @@ export class AuthController {
     @Headers('user-agent') userAgent: string,
   ) {
     const result = await this.authService.login(dto, ip, userAgent);
-    res.cookie('refresh_token', result.refreshToken, {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN;
+    
+    // Generate refresh token separately for cookie storage
+    const refreshToken = await this.authService.generateRefreshTokenForCookie(result.user.id);
+    
+    res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
       maxAge: 30 * 24 * 3600 * 1000,
       path: '/',
+      domain: cookieDomain || undefined,
     });
     return result;
   }
@@ -93,13 +130,20 @@ export class AuthController {
   ) {
     const refresh = dto.refreshToken || (req.cookies?.refresh_token as string);
     const result = await this.authService.refresh(refresh);
-    res.cookie('refresh_token', result.refreshToken, {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN;
+    
+    const newRefreshToken = await this.authService.generateRefreshTokenForCookie(result.userId);
+    
+    res.cookie('refresh_token', newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
       maxAge: 30 * 24 * 3600 * 1000,
+      path: '/',
+      domain: cookieDomain || undefined,
     });
-    return result;
+    return { accessToken: result.accessToken };
   }
 
   @Post('logout')
@@ -115,7 +159,12 @@ export class AuthController {
   ) {
     const refresh = body.all ? undefined : (req.cookies?.refresh_token as string);
     const result = await this.authService.logout(user.id, refresh);
-    res.clearCookie('refresh_token');
+    const cookieDomain = process.env.COOKIE_DOMAIN;
+    
+    res.clearCookie('refresh_token', {
+      path: '/',
+      domain: cookieDomain || undefined,
+    });
     return result;
   }
 

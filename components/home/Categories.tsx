@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import CategoryCard from "@/components/CategoryCard";
-import { categories as defaultCategories } from "@/lib/data";
-import type { Category } from "@/lib/data";
+import type { Category } from "@/lib/server-data";
 
 export default function Categories({ categories }: { categories?: Category[] }) {
-  const list = categories && categories.length > 0 ? categories : defaultCategories;
+  const list = categories && categories.length > 0 ? categories : [];
   return (
     <section className="container-page py-20" aria-labelledby="categories-heading">
       <div className="mb-10 flex items-end justify-between gap-4">
@@ -22,11 +21,18 @@ export default function Categories({ categories }: { categories?: Category[] }) 
           See all <ArrowRight size={14} aria-hidden="true" />
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {list.map((c) => (
-          <CategoryCard key={c.slug} category={c} />
-        ))}
-      </div>
+      {list.length === 0 ? (
+        <div className="rounded-xl2 border border-dashed border-ink-900/15 p-12 text-center">
+          <p className="font-display text-sm font-semibold text-ink-900">No categories available</p>
+          <p className="mt-1 text-xs text-ink-400">Please check back later.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {list.map((c) => (
+            <CategoryCard key={c.slug} category={c} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

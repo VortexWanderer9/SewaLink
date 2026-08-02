@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import BrowseContent, { BrowseMiniLoader } from "@/components/browse/BrowseContent";
 import { getWorkers, getCategories } from "@/lib/server-data";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Browse verified professionals",
   description:

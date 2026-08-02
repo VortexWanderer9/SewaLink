@@ -21,16 +21,9 @@ let authToken: string | null = null;
 
 export function setAuthToken(token: string | null) {
   authToken = token;
-  if (typeof window !== 'undefined') {
-    if (token) localStorage.setItem('sewalink_token', token);
-    else localStorage.removeItem('sewalink_token');
-  }
 }
 
 export function getAuthToken(): string | null {
-  if (typeof window !== 'undefined' && !authToken) {
-    authToken = localStorage.getItem('sewalink_token');
-  }
   return authToken;
 }
 
@@ -123,7 +116,7 @@ export const authApi = {
   login: (dto: LoginInput) =>
     apiFetch<AuthResponse>('/auth/login', { method: 'POST', body: JSON.stringify(dto) }),
   refresh: (refreshToken?: string) =>
-    apiFetch<{ accessToken: string; refreshToken: string }>('/auth/refresh', {
+    apiFetch<{ accessToken: string }>('/auth/refresh', {
       method: 'POST',
       body: JSON.stringify({ refreshToken }),
     }),
@@ -132,6 +125,7 @@ export const authApi = {
     apiFetch<any>('/auth/otp/send', { method: 'POST', body: JSON.stringify({ phone }) }),
   verifyOtp: (otp: string) =>
     apiFetch<any>('/auth/otp/verify', { method: 'POST', body: JSON.stringify({ otp }) }),
+  getMe: () => apiFetch<AuthUser>('/users/me'),
 };
 
 export type Category = {

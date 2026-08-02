@@ -6,7 +6,7 @@ import { PartyPopper, MessageCircle, MapPinned, CalendarDays, ShieldCheck } from
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { VerifiedStamp } from "@/components/VerifiedStamp";
-import { workers } from "@/lib/data";
+import type { Worker } from "@/lib/server-data";
 
 export function ConfirmedMiniLoader() {
   return (
@@ -21,9 +21,8 @@ export function ConfirmedMiniLoader() {
   );
 }
 
-export default function ConfirmedView() {
+export default function ConfirmedView({ worker }: { worker: Worker }) {
   const params = useSearchParams();
-  const worker = workers.find((w) => w.id === params.get("worker")) ?? workers[0];
   const slot = params.get("slot") ?? "your selected time";
 
   return (

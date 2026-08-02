@@ -2,22 +2,32 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { LogIn, Phone, Mail, ShieldCheck } from "lucide-react";
+import { LogIn, Phone, Mail, ShieldCheck, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/lib/auth-context";
 
 type Mode = "phone" | "email" | "google";
 
 export default function LoginView() {
+  const { login } = useAuth();
   const [mode, setMode] = useState<Mode>("phone");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const canSubmit = mode === "phone" ? phone.trim().length >= 7 : email.trim().length > 3 && password.length >= 6;
-  const canVerifyOtp = otp.length >= 6;
+  // Get redirect parameter from URL
+  const [redirectPath] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('redirect') || undefined;
+    }
+    return undefined;
+  });
+
+  const canSubmit = mode === "phone" ? phone.trim().length >= 7 && password.length >= 6 : email.trim().length > 3 && password.length >= 6;
 
   return (
     <div>
@@ -49,7 +59,6 @@ export default function LoginView() {
                 aria-selected={mode === m}
                 onClick={() => {
                   setMode(m);
-                  setOtpSent(false);
                 }}
                 className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition ${
                   mode === m ? "bg-white text-ink-900 shadow-sm" : "text-ink-400 hover:text-ink-700"
@@ -57,7 +66,7 @@ export default function LoginView() {
               >
                 {m === "phone" ? (
                   <>
-                    <Phone size={13} aria-hidden="true" /> Phone OTP
+                    <Phone size={13} aria-hidden="true" /> Phone
                   </>
                 ) : null}
                 {m === "email" ? (
@@ -76,108 +85,94 @@ export default function LoginView() {
 
           <div className="mt-6 rounded-xl2 border border-ink-900/8 bg-white p-6">
             {mode !== "google" ? (
-              <>
-                {!otpSent ? (
-                  <form
-                    className="space-y-4"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      setOtpSent(true);
-                    }}
-                  >
-                    {mode === "phone" ? (
-                      <label className="block text-xs font-medium text-ink-700">
-                        Nepali phone number
-                        <input
-                          type="tel"
-                          inputMode="numeric"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value.replace(/[^0-9+\s-]/g, ""))}
-                          placeholder="98XXXXXXXX"
-                          className="mt-1.5 w-full rounded-xl border border-ink-900/12 bg-paper-50 px-4 py-3 text-sm outline-none focus:border-indigo-900"
-                          autoComplete="tel"
-                        />
-                        <p className="mt-1 text-[11px] text-ink-400">
-                          We&apos;ll send a 6-digit OTP via SMS. Standard SMS rates.
-                        </p>
-                      </label>
-                    ) : (
-                      <div className="space-y-4">
-                        <label className="block text-xs font-medium text-ink-700">
-                          Email address
-                          <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="you@example.com"
-                            className="mt-1.5 w-full rounded-xl border border-ink-900/12 bg-paper-50 px-4 py-3 text-sm outline-none focus:border-indigo-900"
-                            autoComplete="email"
-                          />
-                        </label>
-                        <label className="block text-xs font-medium text-ink-700">
-                          Password
-                          <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="mt-1.5 w-full rounded-xl border border-ink-900/12 bg-paper-50 px-4 py-3 text-sm outline-none focus:border-indigo-900"
-                            autoComplete="current-password"
-                          />
-                        </label>
-                        <div className="flex items-center justify-between text-xs">
-                          <Link href="/" className="font-medium text-indigo-900 hover:underline">
-                            Forgot password?
-                          </Link>
-                        </div>
-                      </div>
-                    )}
-                    <button
-                      type="submit"
-                      disabled={!canSubmit}
-                      className="flex w-full items-center justify-center gap-2 rounded-full bg-indigo-900 px-6 py-3 text-sm font-semibold text-paper-50 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <LogIn size={15} aria-hidden="true" />
-                      {mode === "phone" ? "Send OTP" : "Log in"}
-                    </button>
-                  </form>
-                ) : (
-                  <form
-                    className="space-y-4"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                    }}
-                  >
+              <form
+                className="space-y-4"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsLoading(true);
+                  setError("");
+                  try {
+                    const loginInput = mode === "phone" ? phone : email;
+                    await login(loginInput, password, redirectPath);
+                  } catch (err: any) {
+                    setError(err.message || "Login failed. Please check your credentials.");
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+              >
+                {mode === "phone" ? (
+                  <div className="space-y-4">
                     <label className="block text-xs font-medium text-ink-700">
-                      Enter the 6-digit code we just sent
+                      Nepali phone number
                       <input
-                        type="text"
+                        type="tel"
                         inputMode="numeric"
-                        maxLength={6}
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                        placeholder="000000"
-                        className="mt-1.5 w-full rounded-xl border border-ink-900/12 bg-paper-50 px-4 py-3 text-center text-2xl font-mono tracking-widest outline-none focus:border-indigo-900"
-                        autoComplete="one-time-code"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value.replace(/[^0-9+\s-]/g, ""))}
+                        placeholder="98XXXXXXXX"
+                        className="mt-1.5 w-full rounded-xl border border-ink-900/12 bg-paper-50 px-4 py-3 text-sm outline-none focus:border-indigo-900"
+                        autoComplete="tel"
                       />
                     </label>
-                    <button
-                      type="submit"
-                      disabled={!canVerifyOtp}
-                      className="flex w-full items-center justify-center gap-2 rounded-full bg-marigold-500 px-6 py-3 text-sm font-semibold text-indigo-950 transition hover:bg-marigold-400 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      Verify &amp; log in
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOtpSent(false)}
-                      className="w-full text-center text-xs font-medium text-ink-400 hover:text-indigo-900"
-                    >
-                      ← Use a different number
-                    </button>
-                  </form>
+                    <label className="block text-xs font-medium text-ink-700">
+                      Password
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="mt-1.5 w-full rounded-xl border border-ink-900/12 bg-paper-50 px-4 py-3 text-sm outline-none focus:border-indigo-900"
+                        autoComplete="current-password"
+                      />
+                    </label>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <label className="block text-xs font-medium text-ink-700">
+                      Email address
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="mt-1.5 w-full rounded-xl border border-ink-900/12 bg-paper-50 px-4 py-3 text-sm outline-none focus:border-indigo-900"
+                        autoComplete="email"
+                      />
+                    </label>
+                    <label className="block text-xs font-medium text-ink-700">
+                      Password
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="mt-1.5 w-full rounded-xl border border-ink-900/12 bg-paper-50 px-4 py-3 text-sm outline-none focus:border-indigo-900"
+                        autoComplete="current-password"
+                      />
+                    </label>
+                    <div className="flex items-center justify-between text-xs">
+                      <Link href="/" className="font-medium text-indigo-900 hover:underline">
+                        Forgot password?
+                      </Link>
+                    </div>
+                  </div>
                 )}
-              </>
+                <button
+                  type="submit"
+                  disabled={!canSubmit || isLoading}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-indigo-900 px-6 py-3 text-sm font-semibold text-paper-50 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <LogIn size={15} aria-hidden="true" />
+                  {isLoading ? "Logging in..." : "Log in"}
+                </button>
+                {error && (
+                  <div className="flex items-center gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
+                    <AlertCircle size={16} aria-hidden="true" />
+                    {error}
+                  </div>
+                )}
+              </form>
             ) : (
               <div className="space-y-4 text-center">
                 <p className="text-sm text-ink-700">

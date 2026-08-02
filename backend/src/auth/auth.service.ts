@@ -144,7 +144,6 @@ export class AuthService {
 
     return {
       accessToken,
-      refreshToken,
       user: {
         id: user.id,
         role: user.role,
@@ -176,7 +175,7 @@ export class AuthService {
       data: { userId: user.id, token: newRefresh, expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000) },
     });
 
-    return { accessToken: newAccess, refreshToken: newRefresh };
+    return { accessToken: newAccess, userId: user.id };
   }
 
   async logout(userId: string, refreshTokenStr?: string) {
@@ -193,6 +192,14 @@ export class AuthService {
     }
     this.logger.log(`User logged out: ${userId}`);
     return { message: 'Logged out successfully' };
+  }
+
+  async generateRefreshTokenForCookie(userId: string) {
+    const refreshToken = await this.generateRefreshToken(userId);
+    await this.prisma.refreshToken.create({
+      data: { userId, token: refreshToken, expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000) },
+    });
+    return refreshToken;
   }
 
   async sendPhoneOtp(_phone: string) {
@@ -212,7 +219,6 @@ export class AuthService {
     });
     return {
       accessToken,
-      refreshToken,
       user: {
         id: user.id,
         role,
@@ -231,7 +237,7 @@ export class AuthService {
   private async generateAccessToken(userId: string, role: Role) {
     return this.jwtService.signAsync(
       { sub: userId, role, type: 'access' },
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d', secret: process.env.JWT_SECRET },
+      { expiresIn: process.env.JWT_EXPIRES_IN || '15m', secret: process.env.JWT_SECRET },
     );
   }
 

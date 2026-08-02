@@ -1,7 +1,31 @@
 import { categoriesApi, workersApi, type Category as ApiCategory, type WorkerProfile } from './api';
-import { categories as mockCategories, workers as mockWorkers, type Category, type Worker, type Worker as DataWorker } from './data';
 
-export function apiCategoryToDataCategory(c: ApiCategory): Category {
+export interface Category {
+  slug: string;
+  name: string;
+  nameNe: string;
+  blurb: string;
+  avgPrice: string;
+}
+
+export interface Worker {
+  id: string;
+  name: string;
+  category: string;
+  location: string;
+  yearsExp: number;
+  rating: number;
+  jobsDone: number;
+  priceFrom: number;
+  verified: boolean;
+  badges: string[];
+  bio: string;
+  responseTime: string;
+  avatarInitials: string;
+  gulfReturnee?: boolean;
+}
+
+export function apiCategoryToCategory(c: ApiCategory): Category {
   return {
     slug: c.slug,
     name: c.name,
@@ -11,7 +35,7 @@ export function apiCategoryToDataCategory(c: ApiCategory): Category {
   };
 }
 
-export function apiWorkerToDataWorker(w: WorkerProfile): DataWorker {
+export function apiWorkerToWorker(w: WorkerProfile): Worker {
   const initials = (w.user?.fullName || 'Unknown Worker')
     .split(' ')
     .map((s) => s[0])
@@ -45,11 +69,12 @@ export async function getCategories(): Promise<Category[]> {
   try {
     const res = await categoriesApi.list();
     if (Array.isArray(res) && res.length > 0) {
-      return res.map(apiCategoryToDataCategory);
+      return res.map(apiCategoryToCategory);
     }
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch categories:', error);
   }
-  return mockCategories;
+  return [];
 }
 
 export async function getWorkers(params?: {
@@ -67,47 +92,33 @@ export async function getWorkers(params?: {
   try {
     const res = await workersApi.search(params ?? { take: 50 });
     if (res && Array.isArray(res.data) && res.data.length > 0) {
-      return res.data.map(apiWorkerToDataWorker);
+      return res.data.map(apiWorkerToWorker);
     }
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch workers:', error);
   }
-  let list = mockWorkers;
-  if (params?.category && params.category !== 'all') {
-    list = list.filter((w) => w.category === params.category);
-  }
-  if (params?.query) {
-    const q = params.query.toLowerCase();
-    list = list.filter(
-      (w) =>
-        w.name.toLowerCase().includes(q) ||
-        w.location.toLowerCase().includes(q) ||
-        w.category.includes(q),
-    );
-  }
-  if (params?.minRating) list = list.filter((w) => w.rating >= params.minRating!);
-  if (params?.maxPrice) list = list.filter((w) => w.priceFrom <= params.maxPrice!);
-  if (params?.verifiedOnly) list = list.filter((w) => w.verified);
-  if (params?.sort === 'rating') list = [...list].sort((a, b) => b.rating - a.rating);
-  if (params?.sort === 'price_asc') list = [...list].sort((a, b) => a.priceFrom - b.priceFrom);
-  if (params?.sort === 'price_desc') list = [...list].sort((a, b) => b.priceFrom - a.priceFrom);
-  if (params?.sort === 'jobs_desc') list = [...list].sort((a, b) => b.jobsDone - a.jobsDone);
-  if (params?.skip) list = list.slice(params.skip);
-  if (params?.take) list = list.slice(0, params.take);
-  return list;
+  return [];
 }
 
 export async function getWorkerById(id: string): Promise<Worker | null> {
   try {
     const res = await workersApi.getById(id);
     if (res && res.userId) {
-      return apiWorkerToDataWorker(res as WorkerProfile);
+      return apiWorkerToWorker(res as WorkerProfile);
     }
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch worker:', error);
   }
-  return mockWorkers.find((w) => w.id === id) || mockWorkers[0] || null;
+  return null;
 }
 
 export async function getFeaturedWorkers(limit = 3): Promise<Worker[]> {
-  const all = await getWorkers({ sort: 'rating', take: Math.max(limit, 10) });
-  return all.slice(0, limit);
+  try {
+    const all = await getWorkers({ sort: 'rating', take: Math.max(limit, 10) });
+    return all.slice(0, limit);
+  } catch (error) {
+    console.error('Failed to fetch featured workers:', error);
+    return [];
+  }
 }
+

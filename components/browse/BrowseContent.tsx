@@ -6,7 +6,7 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WorkerCard from "@/components/WorkerCard";
-import { categories as defaultCategories, workers as defaultWorkers, type Category, type Worker } from "@/lib/data";
+import type { Category, Worker } from "@/lib/server-data";
 import { categoryIcons } from "@/components/CategoryCard";
 
 export function BrowseMiniLoader() {
@@ -39,14 +39,11 @@ export default function BrowseContent({
 }) {
   const params = useSearchParams();
   const urlCategory = params.get("category") ?? presetCategory ?? "all";
-  const categories =
-    initialCategories && initialCategories.length > 0 ? initialCategories : defaultCategories;
+  const categories = initialCategories || [];
   const [activeCategory, setActiveCategory] = useState(urlCategory);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"rating" | "price">("rating");
-  const [workers, setWorkers] = useState<Worker[]>(
-    initialWorkers && initialWorkers.length > 0 ? initialWorkers : defaultWorkers,
-  );
+  const workers = initialWorkers || [];
 
   useEffect(() => {
     setActiveCategory(urlCategory);
@@ -67,7 +64,7 @@ export default function BrowseContent({
     return [...list].sort((a, b) =>
       sort === "rating" ? b.rating - a.rating : a.priceFrom - b.priceFrom,
     );
-  }, [workers, activeCategory, query, sort]);
+  }, [workers, activeCategory, query, sort, initialWorkers]);
 
   const activeCategoryData = categories.find((c) => c.slug === activeCategory);
 
