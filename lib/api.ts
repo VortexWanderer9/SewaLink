@@ -12,10 +12,11 @@ export type PaginatedResponse<T> = {
 };
 
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.hostname}:3001/api/v1`
-    : 'http://localhost:3001/api/v1');
+  typeof window !== 'undefined'
+    ? process.env.NODE_ENV === 'production'
+      ? process.env.NEXT_PUBLIC_API_URL || '/api/v1'
+      : '/api/v1'
+    : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
 let authToken: string | null = null;
 

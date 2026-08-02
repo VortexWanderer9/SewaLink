@@ -14,9 +14,14 @@ async function bootstrap() {
     logger.log(`Created upload directory: ${uploadDir}`);
   }
 
+  const corsOrigins = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()) || ['http://localhost:3000'];
+  if (process.env.NODE_ENV !== 'production') {
+    corsOrigins.push('http://127.0.0.1:3000');
+  }
+
   const app = await NestFactory.create(AppModule, {
     cors: {
-      origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+      origin: corsOrigins,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],

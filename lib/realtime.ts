@@ -22,8 +22,10 @@ export class SewaLinkRealtime {
     this.baseUrl =
       baseUrl ||
       (typeof window !== 'undefined'
-        ? `${window.location.protocol}//${window.location.hostname}:3001`
-        : 'http://localhost:3001');
+        ? process.env.NODE_ENV === 'production'
+          ? process.env.NEXT_PUBLIC_REALTIME_URL || `${window.location.protocol}//${window.location.host}`
+          : `${window.location.protocol}//${window.location.host}`
+        : process.env.NEXT_PUBLIC_REALTIME_URL || 'http://localhost:3001');
   }
 
   async ensureIO() {
