@@ -1,6 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { PartyPopper, MessageCircle, MapPinned, CalendarDays, ShieldCheck } from "lucide-react";

@@ -24,7 +24,7 @@ export default function BookingFlow({ worker, workerId }: { worker: Worker; work
   });
 
   const updateState = useCallback(
-    (updater: (prev: BookingState) => BookingState) => setState(updater),
+    (updater: (_prev: BookingState) => BookingState) => setState(updater),
     []
   );
 

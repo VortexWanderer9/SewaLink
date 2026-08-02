@@ -24,7 +24,7 @@ export default function BookingStepContent({
 }: {
   worker: Worker;
   state: BookingState;
-  setState: (updater: (prev: BookingState) => BookingState) => void;
+  setState: (_updater: (_prev: BookingState) => BookingState) => void;
 }) {
   const firstName = worker.name.split(" ")[0];
 
