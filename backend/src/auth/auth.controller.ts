@@ -53,7 +53,7 @@ export class AuthController {
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      sameSite: 'lax',
       maxAge: 30 * 24 * 3600 * 1000,
       path: '/',
       domain: cookieDomain || undefined,
@@ -80,7 +80,7 @@ export class AuthController {
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      sameSite: 'lax',
       maxAge: 30 * 24 * 3600 * 1000,
       path: '/',
       domain: cookieDomain || undefined,
@@ -138,7 +138,7 @@ export class AuthController {
     res.cookie('refresh_token', newRefreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      sameSite: 'lax',
       maxAge: 30 * 24 * 3600 * 1000,
       path: '/',
       domain: cookieDomain || undefined,

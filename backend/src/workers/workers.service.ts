@@ -23,7 +23,7 @@ export class WorkersService {
   }) {
     const where: any = {};
     if (params.category && params.category !== 'all') where.categorySlug = params.category;
-    if (params.verifiedOnly !== false) where.verificationStatus = VerificationStatus.VERIFIED;
+    if (params.verifiedOnly) where.verificationStatus = VerificationStatus.VERIFIED;
     if (params.onlineOnly) where.isOnline = true;
     if (params.minRating) where.rating = { gte: params.minRating };
     if (params.maxPrice) where.priceFrom = { lte: params.maxPrice };
@@ -103,8 +103,11 @@ export class WorkersService {
   async updateMyProfile(userId: string, dto: any) {
     const wp = await this.prisma.workerProfile.findFirst({ where: { userId } });
     if (!wp) throw new NotFoundException('Worker profile not found');
-    const { availability, skills, ...rest } = dto;
+    const { availability, skills, fullName, ...rest } = dto;
     return this.prisma.$transaction(async (tx) => {
+      if (typeof fullName === 'string' && fullName.trim()) {
+        await tx.user.update({ where: { id: userId }, data: { fullName: fullName.trim() } });
+      }
       const updated = await tx.workerProfile.update({ where: { id: wp.id }, data: rest });
       if (availability) {
         await tx.availability.deleteMany({ where: { workerProfileId: wp.id } });
