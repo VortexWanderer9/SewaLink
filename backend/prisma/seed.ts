@@ -250,7 +250,7 @@ async function main() {
       BookingStatus.PENDING, BookingStatus.IN_PROGRESS, BookingStatus.EN_ROUTE,
     ];
     const status = i < 50 ? statuses[i % statuses.length] : BookingStatus.PENDING;
-    const basePrice = worker.profile.priceFrom.toNumber() + ((i * 77) % 1500);
+    const basePrice = Number(worker.profile.priceFrom) + ((i * 77) % 1500);
     const partsPrice = i % 4 === 0 ? ((i * 123) % 5000) : 0;
     const tipAmount = i % 6 === 0 ? 100 + (i % 5) * 50 : 0;
     const platformFee = Math.round((basePrice + partsPrice) * 0.15);
@@ -280,12 +280,12 @@ async function main() {
         cancelledAt: status === BookingStatus.CANCELLED ? new Date(scheduledAt.getTime() - 86400000) : null,
         cancelledBy: status === BookingStatus.CANCELLED ? (i % 2 === 0 ? 'CUSTOMER' : 'WORKER') : null,
         cancelReason: status === BookingStatus.CANCELLED ? 'Schedule conflict' : null,
-        arrivedAt: [BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED].includes(status) ? new Date(scheduledAt.getTime() - 5 * 60000) : null,
-        startedAt: [BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED].includes(status) ? new Date(scheduledAt.getTime() + 5 * 60000) : null,
+        arrivedAt: ([BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED] as BookingStatus[]).includes(status) ? new Date(scheduledAt.getTime() - 5 * 60000) : null,
+        startedAt: ([BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED] as BookingStatus[]).includes(status) ? new Date(scheduledAt.getTime() + 5 * 60000) : null,
       },
     });
 
-    if ([BookingStatus.COMPLETED, BookingStatus.IN_PROGRESS, BookingStatus.EN_ROUTE, BookingStatus.ACCEPTED].includes(status)) {
+    if (([BookingStatus.COMPLETED, BookingStatus.IN_PROGRESS, BookingStatus.EN_ROUTE, BookingStatus.ACCEPTED] as BookingStatus[]).includes(status)) {
       const method = i % 4 === 0 ? PaymentMethod.CASH : [PaymentMethod.ESEWA, PaymentMethod.KHALTI, PaymentMethod.IMEPAY][i % 3];
       await prisma.payment.create({
         data: {

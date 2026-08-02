@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WorkerCard from "@/components/WorkerCard";
-import { categories, workers } from "@/lib/data";
+import { categories as defaultCategories, workers as defaultWorkers, type Category, type Worker } from "@/lib/data";
 import { categoryIcons } from "@/components/CategoryCard";
 
 export function BrowseMiniLoader() {
@@ -28,12 +28,29 @@ export function BrowseMiniLoader() {
   );
 }
 
-export default function BrowseContent() {
+export default function BrowseContent({
+  initialWorkers,
+  initialCategories,
+  presetCategory,
+}: {
+  initialWorkers?: Worker[];
+  initialCategories?: Category[];
+  presetCategory?: string;
+}) {
   const params = useSearchParams();
-  const initial = params.get("category") ?? "all";
-  const [activeCategory, setActiveCategory] = useState(initial);
+  const urlCategory = params.get("category") ?? presetCategory ?? "all";
+  const categories =
+    initialCategories && initialCategories.length > 0 ? initialCategories : defaultCategories;
+  const [activeCategory, setActiveCategory] = useState(urlCategory);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"rating" | "price">("rating");
+  const [workers, setWorkers] = useState<Worker[]>(
+    initialWorkers && initialWorkers.length > 0 ? initialWorkers : defaultWorkers,
+  );
+
+  useEffect(() => {
+    setActiveCategory(urlCategory);
+  }, [urlCategory]);
 
   const filtered = useMemo(() => {
     let list = workers;
@@ -44,13 +61,13 @@ export default function BrowseContent() {
         (w) =>
           w.name.toLowerCase().includes(q) ||
           w.location.toLowerCase().includes(q) ||
-          w.category.includes(q)
+          w.category.includes(q),
       );
     }
     return [...list].sort((a, b) =>
-      sort === "rating" ? b.rating - a.rating : a.priceFrom - b.priceFrom
+      sort === "rating" ? b.rating - a.rating : a.priceFrom - b.priceFrom,
     );
-  }, [activeCategory, query, sort]);
+  }, [workers, activeCategory, query, sort]);
 
   const activeCategoryData = categories.find((c) => c.slug === activeCategory);
 

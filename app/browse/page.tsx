@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import BrowseContent, { BrowseMiniLoader } from "@/components/browse/BrowseContent";
+import { getWorkers, getCategories } from "@/lib/server-data";
 
 export const metadata: Metadata = {
   title: "Browse verified professionals",
@@ -16,10 +17,23 @@ export const metadata: Metadata = {
   alternates: { canonical: "/browse" },
 };
 
-export default function BrowsePage() {
+export default async function BrowsePage({
+  searchParams,
+}: {
+  searchParams: { category?: string };
+}) {
+  const category = searchParams.category ?? "all";
+  const [initialWorkers, initialCategories] = await Promise.all([
+    getWorkers({ category, take: 50 }),
+    getCategories(),
+  ]);
   return (
     <Suspense fallback={<BrowseMiniLoader />}>
-      <BrowseContent />
+      <BrowseContent
+        initialWorkers={initialWorkers}
+        initialCategories={initialCategories}
+        presetCategory={category}
+      />
     </Suspense>
   );
 }

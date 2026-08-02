@@ -6,14 +6,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import RatingStars from "@/components/RatingStars";
 import { VerifiedStamp } from "@/components/VerifiedStamp";
-import { workers, categories } from "@/lib/data";
+import { getWorkerById, getCategories } from "@/lib/server-data";
+import { reviewsApi } from "@/lib/api";
 
-export function generateStaticParams() {
-  return workers.map((w) => ({ id: w.id }));
-}
+export const dynamic = "force-dynamic";
 
-export function generateMetadata({ params }: { params: { id: string } }): Metadata {
-  const worker = workers.find((w) => w.id === params.id);
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const [worker, categories] = await Promise.all([getWorkerById(params.id), getCategories()]);
   if (!worker) {
     return { title: "Professional not found" };
   }
@@ -39,17 +38,26 @@ const VERIFICATION_ITEMS = [
   "Background check passed",
 ];
 
-const SAMPLE_REVIEWS = [
-  { name: "Anita G.", rating: 5, text: "Arrived on time and explained exactly what was wrong before starting. Fair price too." },
-  { name: "Sagar P.", rating: 5, text: "Fixed a wiring fault two other electricians couldn't figure out. Highly recommend." },
-  { name: "Meena T.", rating: 4, text: "Good work, took a little longer than the estimate but kept me updated the whole time." },
-];
+async function getReviews(workerId: string) {
+  try {
+    const res = await reviewsApi.byWorker(workerId, 0, 3);
+    if (Array.isArray(res) && res.length > 0) return res;
+  } catch {
+  }
+  return [
+    { name: "Anita G.", rating: 5, text: "Arrived on time and explained exactly what was wrong before starting. Fair price too." },
+    { name: "Sagar P.", rating: 5, text: "Fixed a wiring fault two other electricians couldn't figure out. Highly recommend." },
+    { name: "Meena T.", rating: 4, text: "Good work, took a little longer than the estimate but kept me updated the whole time." },
+  ];
+}
 
-export default function WorkerProfilePage({ params }: { params: { id: string } }) {
-  const worker = workers.find((w) => w.id === params.id);
+export default async function WorkerProfilePage({ params }: { params: { id: string } }) {
+  const worker = await getWorkerById(params.id);
   if (!worker) notFound();
+  const categories = await getCategories();
   const category = categories.find((c) => c.slug === worker.category);
   const firstName = worker.name.split(" ")[0];
+  const reviews = await getReviews(worker.id);
 
   return (
     <div>
@@ -125,15 +133,15 @@ export default function WorkerProfilePage({ params }: { params: { id: string } }
               <RatingStars rating={worker.rating} size={16} />
             </div>
             <div className="mt-3 space-y-3" role="list" aria-label="Customer reviews">
-              {SAMPLE_REVIEWS.map((r) => (
-                <article key={r.name} role="listitem" className="rounded-xl2 border border-ink-900/8 bg-white p-4">
+              {reviews.map((r: any, i: number) => (
+                <article key={`${r.name || 'review'}-${i}`} role="listitem" className="rounded-xl2 border border-ink-900/8 bg-white p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-ink-900">{r.name}</span>
+                    <span className="text-sm font-semibold text-ink-900">{r.authorName || r.name || "Customer"}</span>
                     <span className="flex items-center gap-1 text-xs text-ink-400" aria-label={`Rated ${r.rating} out of 5`}>
                       <Star size={12} className="fill-marigold-500 text-marigold-500" aria-hidden="true" /> {r.rating}.0
                     </span>
                   </div>
-                  <p className="mt-1.5 text-sm text-ink-700">{r.text}</p>
+                  <p className="mt-1.5 text-sm text-ink-700">{r.comment || r.text}</p>
                 </article>
               ))}
             </div>

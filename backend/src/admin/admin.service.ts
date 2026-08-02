@@ -55,7 +55,7 @@ export class AdminService {
       this.prisma.workerProfile.findMany({
         where: { verificationStatus: { in: ['PENDING', 'IN_REVIEW'] } },
         take: 15, orderBy: { createdAt: 'asc' },
-        include: { user: { select: { id: true, fullName: true, phone: true, email: true, createdAt: true } }, category: true, documents: true },
+        include: { user: { select: { id: true, fullName: true, phone: true, email: true, createdAt: true, documents: true } }, category: true },
       }),
       this.prisma.workerProfile.findMany({
         where: { verificationStatus: 'VERIFIED' },

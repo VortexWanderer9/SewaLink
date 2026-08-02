@@ -3,10 +3,17 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
+import { mkdirSync, existsSync } from 'fs';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+  const uploadDir = process.env.UPLOAD_DIR || './uploads';
+  if (!existsSync(uploadDir)) {
+    mkdirSync(uploadDir, { recursive: true });
+    logger.log(`Created upload directory: ${uploadDir}`);
+  }
+
   const app = await NestFactory.create(AppModule, {
     cors: {
       origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],

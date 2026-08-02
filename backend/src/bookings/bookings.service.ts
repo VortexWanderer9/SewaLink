@@ -30,7 +30,7 @@ export class BookingsService {
       ? await this.prisma.address.findFirst({ where: { id: dto.addressId, userId: customerId } })
       : null;
 
-    const basePrice = dto.basePrice || worker.priceFrom.toNumber();
+    const basePrice = dto.basePrice || Number(worker.priceFrom);
     const partsPrice = dto.partsPrice || 0;
     const tipAmount = dto.tipAmount || 0;
     const subtotal = basePrice + partsPrice;
@@ -125,8 +125,8 @@ export class BookingsService {
     const booking = await this.prisma.booking.findUnique({ where: { id } });
     if (!booking) throw new NotFoundException('Booking not found');
 
-    const allowedByWorker = [BookingStatus.ACCEPTED, BookingStatus.REJECTED, BookingStatus.EN_ROUTE, BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED];
-    const allowedByCustomer = [BookingStatus.CANCELLED];
+    const allowedByWorker = [BookingStatus.ACCEPTED, BookingStatus.REJECTED, BookingStatus.EN_ROUTE, BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED] as BookingStatus[];
+    const allowedByCustomer = [BookingStatus.CANCELLED] as BookingStatus[];
     const canTransition =
       role === Role.ADMIN ||
       (role === Role.WORKER && booking.workerId === userId && allowedByWorker.includes(status)) ||
@@ -167,14 +167,14 @@ export class BookingsService {
         where: { userId: booking.workerId },
         data: {
           totalJobsDone: { increment: 1 },
-          totalEarnings: { increment: booking.workerEarnings.toNumber() },
+          totalEarnings: { increment: Number(booking.workerEarnings) },
         },
       });
       await this.prisma.customerProfile.update({
         where: { userId: booking.customerId },
         data: {
           totalBookings: { increment: 1 },
-          totalSpent: { increment: booking.totalAmount.toNumber() },
+          totalSpent: { increment: Number(booking.totalAmount) },
         },
       });
     }
@@ -204,7 +204,7 @@ export class BookingsService {
     const booking = await this.prisma.booking.findUnique({ where: { id } });
     if (!booking) throw new NotFoundException('Booking not found');
     if (booking.customerId !== customerId) throw new ForbiddenException('Access denied');
-    if ([BookingStatus.COMPLETED, BookingStatus.CANCELLED, BookingStatus.IN_PROGRESS].includes(booking.status)) {
+    if (([BookingStatus.COMPLETED, BookingStatus.CANCELLED, BookingStatus.IN_PROGRESS] as BookingStatus[]).includes(booking.status)) {
       throw new BadRequestException('Booking cannot be rescheduled in current state');
     }
 

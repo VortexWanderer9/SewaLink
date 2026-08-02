@@ -182,6 +182,7 @@ model Category {
   updatedAt       DateTime        @updatedAt
   workers         WorkerProfile[]
   skills          CategorySkill[]
+  bookings        Booking[]
 }
 
 model CategorySkill {
@@ -261,6 +262,7 @@ model Address {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings     Booking[]
 
   @@index([userId])
 }
@@ -309,6 +311,7 @@ model Booking {
 
   customer        User          @relation("BookingsCustomer", fields: [customerId], references: [id], onDelete: Restrict)
   worker          User          @relation("BookingsWorker", fields: [workerId], references: [id], onDelete: Restrict)
+  category        Category      @relation(fields: [categorySlug], references: [slug])
   address         Address?      @relation(fields: [addressId], references: [id], onDelete: SetNull)
   payments        Payment[]
   reviews         Review[]
@@ -454,6 +457,7 @@ model Earning {
   earnedAt        DateTime      @default(now())
   createdAt       DateTime      @default(now())
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payout          Payout?       @relation(fields: [payoutId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([payoutStatus])
@@ -494,6 +498,7 @@ model AuditLog {
   userAgent  String?
   createdAt  DateTime @default(now())
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  booking    Booking? @relation(fields: [entityId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([action])

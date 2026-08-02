@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import CategoryCard from "@/components/CategoryCard";
-import { categories } from "@/lib/data";
+import { categories as defaultCategories } from "@/lib/data";
+import type { Category } from "@/lib/data";
 
-export default function Categories() {
+export default function Categories({ categories }: { categories?: Category[] }) {
+  const list = categories && categories.length > 0 ? categories : defaultCategories;
   return (
     <section className="container-page py-20" aria-labelledby="categories-heading">
       <div className="mb-10 flex items-end justify-between gap-4">
@@ -21,7 +23,7 @@ export default function Categories() {
         </Link>
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {categories.map((c) => (
+        {list.map((c) => (
           <CategoryCard key={c.slug} category={c} />
         ))}
       </div>

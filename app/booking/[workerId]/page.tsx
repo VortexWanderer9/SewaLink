@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BookingFlow from "@/components/booking/BookingFlow";
-import { workers } from "@/lib/data";
+import { getWorkerById } from "@/lib/server-data";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Book a verified professional",
@@ -9,8 +11,8 @@ export const metadata: Metadata = {
     "Book a SewaLink verified electrician, plumber, or home services pro. Choose a time slot, pay securely, and track arrival live.",
 };
 
-export default function BookingPage({ params }: { params: { workerId: string } }) {
-  const worker = workers.find((w) => w.id === params.workerId);
+export default async function BookingPage({ params }: { params: { workerId: string } }) {
+  const worker = await getWorkerById(params.workerId);
   if (!worker) notFound();
   return <BookingFlow worker={worker} workerId={params.workerId} />;
 }

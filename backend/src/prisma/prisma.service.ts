@@ -1,6 +1,8 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient, Prisma } from '@prisma/client';
 
+export { Prisma };
+
 @Injectable()
 export class PrismaService
   extends PrismaClient<Prisma.PrismaClientOptions, 'query' | 'error' | 'beforeExit'>
@@ -41,7 +43,7 @@ export class PrismaService
   async cleanDatabase() {
     if (process.env.NODE_ENV !== 'test') return;
     const models = Prisma.ModelName;
-    const tables = Object.values(models);
+    const tables: string[] = Object.values(models) as string[];
     const trx = tables.map((table) =>
       this.$executeRawUnsafe(`TRUNCATE TABLE "${table}" CASCADE;`),
     );

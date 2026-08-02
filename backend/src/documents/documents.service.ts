@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Prisma, PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 
 @Injectable()
@@ -11,21 +11,19 @@ export class DocumentsService {
   }
 
   async upload(userId: string, files: any[], types: string[]) {
-    const created = [];
+    const created: any[] = [];
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
-      created.push(
-        await this.prisma.document.create({
-          data: {
-            userId,
-            type: types[i] || 'OTHER',
-            fileName: f.originalname || f.filename,
-            filePath: f.path || f.location || f.filename,
-            fileSize: f.size,
-            mimeType: f.mimetype,
-          },
-        }),
-      );
+      const data: Prisma.DocumentCreateInput = {
+        user: { connect: { id: userId } },
+        type: types[i] || 'OTHER',
+        fileName: f.originalname || f.filename,
+        filePath: f.path || f.location || f.filename,
+        fileSize: f.size,
+        mimeType: f.mimetype,
+      };
+      const doc = await (this.prisma.document as unknown as { create: (args: { data: Prisma.DocumentCreateInput }) => Promise<any> }).create({ data });
+      created.push(doc);
     }
     return created;
   }

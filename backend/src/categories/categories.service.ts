@@ -7,17 +7,17 @@ export class CategoriesService {
 
   async findAll(includeInactive = false) {
     return this.prisma.category.findMany({
-      where: includeInactive ? undefined : { isActive: true },
-      orderBy: [{ sortOrder: 'asc' }],
-      include: { _count: { select: { workers: { where: { verificationStatus: 'VERIFIED' } } } },
-    });
+      where: includeInactive ? {} : { isActive: true },
+      orderBy: [{ sortOrder: 'asc' } as any],
+      include: { _count: { select: { workers: true } } },
+    } as any);
   }
 
   async findOne(slug: string) {
     const cat = await this.prisma.category.findUnique({
       where: { slug },
-      include: { skills: true, _count: { select: { workers: { where: { verificationStatus: 'VERIFIED' } } } },
-    });
+      include: { skills: true, _count: { select: { workers: true } } },
+    } as any);
     if (!cat) throw new NotFoundException('Category not found');
     return cat;
   }

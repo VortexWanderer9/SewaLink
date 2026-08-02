@@ -28,8 +28,8 @@ export class SewaLinkRealtime {
 
   async ensureIO() {
     if (!this.ioClient) {
-      const mod = await import('socket.io-client');
-      this.ioClient = mod.io || (mod as any).default?.io || (mod as any).default || mod;
+      const mod: any = await import('socket.io-client');
+      this.ioClient = mod.io ?? mod.default?.io ?? mod.default ?? mod;
     }
     return this.ioClient;
   }

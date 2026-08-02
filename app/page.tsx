@@ -12,7 +12,7 @@ import Testimonials from "@/components/home/Testimonials";
 import FAQ from "@/components/home/FAQ";
 import DownloadApp from "@/components/home/DownloadApp";
 import InvestorSection from "@/components/home/InvestorSection";
-import { workers } from "@/lib/data";
+import { getFeaturedWorkers, getCategories } from "@/lib/server-data";
 
 export const metadata: Metadata = {
   title: "SewaLink Nepal — Trusted Local Services, One Tap Away",
@@ -21,14 +21,17 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export default function Home() {
-  const featuredWorkers = workers.slice(0, 3);
+export default async function Home() {
+  const [featuredWorkers, categories] = await Promise.all([
+    getFeaturedWorkers(3),
+    getCategories(),
+  ]);
   return (
     <div>
       <Header />
       <Hero />
       <TrustStrip />
-      <Categories />
+      <Categories categories={categories} />
       <HowItWorks />
       <FeaturedPros featured={featuredWorkers} />
       <BusinessSection />

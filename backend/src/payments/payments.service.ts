@@ -60,11 +60,11 @@ export class PaymentsService {
           merchantId: process.env.ESEWA_MERCHANT_ID || 'EPAYTEST',
           paymentUrl: `${process.env.ESEWA_BASE_URL || 'https://uat.esewa.com.np'}/epay/main`,
           params: {
-            amt: payment.amount.toNumber(),
+            amt: Number(payment.amount),
             psc: 0,
             pdc: 0,
             txAmt: 0,
-            tAmt: payment.amount.toNumber(),
+            tAmt: Number(payment.amount),
             pid: payment.id,
             scd: process.env.ESEWA_MERCHANT_ID || 'EPAYTEST',
           },
@@ -88,8 +88,8 @@ export class PaymentsService {
     }
   }
 
-  async verifyEsewa(userId: string, data: { oid: string; amt: string; refId: string; success?: string }) {
-    if (data.success === false) {
+  async verifyEsewa(userId: string, data: { oid: string; amt: string; refId: string; success?: string | boolean }) {
+    if (data.success === false || data.success === 'false') {
       return { success: false, message: 'eSewa payment cancelled or failed' };
     }
     const payment = await this.prisma.payment.findUnique({ where: { id: data.oid }, include: { booking: true } });
@@ -129,7 +129,7 @@ export class PaymentsService {
       updated.booking.workerId,
       'PAYMENT_RECEIVED',
       'Payment received',
-      `Rs ${updated.amount.toNumber()} received for booking`,
+      `Rs ${Number(updated.amount)} received for booking`,
       { bookingId: updated.bookingId, paymentId: updated.id },
     );
     await this.audit.log('PAYMENT_COMPLETE', 'PAYMENT', updated.id, null, { status: 'COMPLETED' }, undefined, undefined, extra.paidBy);

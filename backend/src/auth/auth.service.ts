@@ -121,7 +121,7 @@ export class AuthService {
     return this.buildAuthResponse(user, Role.WORKER, user.workerProfile!.verificationStatus);
   }
 
-  async login(dto: Login, ip?: string, userAgent?: string) {
+  async login(dto: LoginDto, ip?: string, userAgent?: string) {
     const normalizedPhone = dto.phone ? this.normalizePhone(dto.phone) : null;
     const user = await this.prisma.user.findFirst({
       where: dto.phone ? { phone: normalizedPhone! } : { email: dto.email?.toLowerCase() },
